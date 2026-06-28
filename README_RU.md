@@ -1,46 +1,72 @@
-# Kefir Betaflight VTX One-Based Online Pages Pack
+# Kefir Betaflight VTX One-Based Online Pack
 
-Этот пакет предназначен для пустого GitHub-репозитория.
-Он сам скачивает официальный `betaflight/betaflight-configurator`, применяет визуальную правку VTX и публикует онлайн-версию через GitHub Pages.
+Это маленький проект для GitHub Pages. Он сам скачивает официальный `betaflight/betaflight-configurator`, применяет визуальную правку вкладки VTX и публикует онлайн-версию.
 
-## Что меняется
+## Что исправлено в этой версии пакета
 
-Только визуальное отображение в VTX Table Power Values:
+Если раньше в Actions была ошибка:
 
-- в Betaflight хранится: `0 1 2 3`
-- пользователь видит: `1 2 3 4`
-- при `Save` / `Сохранить`: обратно уходит `0 1 2 3`
-- при `Save file` / `Сохранить файл`: файл остаётся совместимым с Betaflight
+```text
+Cannot find .../app/src/js/tabs/vtx.js
+Run this script from the root of betaflight-configurator.
+```
 
-Обычные значения мощности в mW, например `25 200 500 800`, не сдвигаются.
+то этот пакет исправляет запуск: Betaflight скачивается в папку `app`, а патч запускается уже изнутри `app`. Также добавлена проверка/вывод найденных VTX-файлов перед патчем.
 
-## Что лежит в пакете
+## Что меняет патч
 
-- `.github/workflows/build-online-betaflight.yml` — автоматическая сборка и публикация сайта.
-- `tools/apply_kefir_vtx_ui_patch.mjs` — применяет правку к `src/js/tabs/vtx.js`.
-- `tools/test_vtx_visual_conversion.mjs` — проверяет, что конвертация визуальная и обратимая.
-- `docs/WHAT_WAS_CHECKED.md` — краткая проверка логики.
+Только визуальное отображение VTX Table Power Values:
 
-## Как получить онлайн-ссылку без командной строки
+```text
+Внутри Betaflight: 0 1 2 3
+В интерфейсе:      1 2 3 4
+При Save:          0 1 2 3
+При Save File:     0 1 2 3
+При Save Lua:      0 1 2 3
+```
 
-1. Создай пустой репозиторий на GitHub.
-2. Распакуй этот архив на компьютере.
-3. В репозитории нажми `Add file` → `Upload files`.
-4. Перетащи в окно GitHub содержимое распакованной папки, включая папки `.github`, `tools`, `docs`.
-5. Нажми зелёную кнопку `Commit changes`.
-6. Открой вкладку `Settings` → `Pages`.
+Обычные значения мощности не трогаются:
+
+```text
+25 200 500 800 -> 25 200 500 800
+```
+
+## Как использовать через сайт GitHub
+
+1. Открой свой репозиторий, например `Kefir-betaflight`.
+2. Удали старые файлы пакета или загрузи новые поверх старых.
+3. Нажми `Add file` → `Upload files`.
+4. Перетащи содержимое этой папки в репозиторий:
+
+```text
+.github
+README_RU.md
+docs
+tools
+KEFIR_ONLINE_PAGES_SUMMARY.txt
+```
+
+5. Нажми `Commit changes`.
+6. Открой `Settings` → `Pages`.
 7. В `Build and deployment` выбери `Source: GitHub Actions`.
-8. Открой вкладку `Actions`.
-9. Выбери workflow `Build online Kefir Betaflight VTX`.
+8. Открой `Actions`.
+9. Выбери `Build online Kefir Betaflight VTX`.
 10. Нажми `Run workflow`.
-11. После зелёной галочки зайди в `Settings` → `Pages`; там будет ссылка вида:
-    `https://ТВОЙ_НИК.github.io/ИМЯ_РЕПОЗИТОРИЯ/`
+11. Поля оставь по умолчанию:
 
-## Если не появляется кнопка Run workflow
+```text
+upstream_repository = betaflight/betaflight-configurator
+upstream_ref = master
+```
 
-Открой `Actions` и нажми `I understand my workflows, go ahead and enable them`.
-Потом вернись к workflow и запусти его.
+12. После зелёной сборки ссылка будет в `Settings` → `Pages`.
 
-## Если сайт открылся, но не видит COM-порт
+Обычно ссылка будет такого вида:
 
-Открывай через Chrome или Edge. Онлайн-версия работает через Web Serial, поэтому сайт должен быть открыт по HTTPS. GitHub Pages даёт HTTPS.
+```text
+https://ТВОЙ_НИК.github.io/Kefir-betaflight/
+```
+
+## Если сборка снова упадёт
+
+Открой красный лог и посмотри шаг `Download Betaflight App source`. Там теперь печатается список найденных файлов `*vtx*.js`, чтобы было видно, скачался ли настоящий Betaflight и где лежит вкладка VTX.

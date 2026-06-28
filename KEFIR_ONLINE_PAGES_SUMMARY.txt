@@ -1,9 +1,14 @@
-Kefir Betaflight VTX One-Based Online Pages Pack
+Kefir Betaflight VTX One-Based Online Pack
 
-Upload this package to an empty GitHub repository.
-The included GitHub Actions workflow will:
-1. checkout official betaflight/betaflight-configurator;
-2. apply the visual-only VTX UI patch;
-3. test conversion logic;
-4. build the PWA;
-5. deploy it to GitHub Pages.
+Fixed workflow version.
+
+Purpose:
+- Create an online GitHub Pages build of Betaflight App.
+- Apply a visual-only VTX Table Power Values patch.
+- Show zero-based control values 0 1 2 3 as 1 2 3 4 in the UI.
+- Save / Save File / Save Lua keep correct Betaflight values 0 1 2 3.
+
+Fix in this package:
+- Betaflight source is downloaded explicitly into ./app via git clone.
+- Patch script is run from ./app.
+- The script can locate vtx.js robustly and prints helpful diagnostics if the upstream layout changes.
