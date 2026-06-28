@@ -24,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      UPSTREAM_REPOSITORY: betaflight/betaflight-configurator
-      UPSTREAM_REF: 2025.12.2
+      UPSTREAM_REPOSITORY: "betaflight/betaflight-configurator"
+      UPSTREAM_REF: "2025.12.2"
       HUSKY: "0"
 
     steps:
@@ -60,7 +60,8 @@ jobs:
           git rev-parse --short HEAD
           cd ..
 
-          echo "Checking required files:"
+          echo "Checking required files..."
+
           if [ ! -f app/src/js/tabs/vtx.js ]; then
             echo "ERROR: app/src/js/tabs/vtx.js not found."
             echo "Found VTX candidates:"
@@ -198,8 +199,8 @@ jobs:
 
           let html = fs.readFileSync(file, "utf8");
 
-          if (html.includes("KEFIR TOP TABS UI PATCH")) {
-              console.log("Kefir top tabs patch is already present. Skipping.");
+          if (html.includes("KEFIR TOP TABS UI PATCH V3")) {
+              console.log("Kefir top tabs patch V3 is already present. Skipping.");
               process.exit(0);
           }
 
@@ -225,110 +226,161 @@ jobs:
           }
 
           const patch = `
-          <!-- KEFIR TOP TABS UI PATCH START -->
-          <style id="kefir-top-tabs-style">
-              body:not(.kefir-show-all-tabs) #tabs .tab_power,
-              body:not(.kefir-show-all-tabs) #tabs .tab_presets,
-              body:not(.kefir-show-all-tabs) #tabs .tab_adjustments,
-              body:not(.kefir-show-all-tabs) #tabs .tab_led_strip,
-              body:not(.kefir-show-all-tabs) #tabs .tab_logging,
-              body:not(.kefir-show-all-tabs) #tabs .tab_onboard_logging {
-                  display: none !important;
-              }
-
-              body.kefir-show-all-tabs #tabs .tab_power,
-              body.kefir-show-all-tabs #tabs .tab_presets,
-              body.kefir-show-all-tabs #tabs .tab_adjustments,
-              body.kefir-show-all-tabs #tabs .tab_led_strip,
-              body.kefir-show-all-tabs #tabs .tab_logging,
-              body.kefir-show-all-tabs #tabs .tab_onboard_logging {
-                  display: inline-flex !important;
-              }
-
-              #tabs {
+          <!-- KEFIR TOP TABS UI PATCH V3 START -->
+          <style id="kefir-top-tabs-style-v3">
+              body.kefir-tabs-top #kefir-top-tabs-host {
                   position: sticky !important;
                   top: 0 !important;
-                  left: auto !important;
-                  right: auto !important;
-                  bottom: auto !important;
-                  width: 100% !important;
-                  height: auto !important;
-                  max-height: none !important;
-                  overflow: visible !important;
-                  z-index: 900 !important;
-                  box-sizing: border-box !important;
+                  z-index: 950 !important;
                   display: flex !important;
-                  flex-wrap: wrap !important;
                   align-items: center !important;
-                  gap: 4px !important;
-                  padding: 6px 10px !important;
-                  margin: 0 !important;
+                  gap: 8px !important;
+                  width: 100% !important;
+                  min-height: 60px !important;
+                  box-sizing: border-box !important;
+                  padding: 5px 10px !important;
                   background: rgba(245, 245, 245, 0.98) !important;
-                  border-bottom: 1px solid #d0d0d0 !important;
-                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+                  border-bottom: 1px solid #d2d2d2 !important;
+                  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.08) !important;
+                  overflow-x: auto !important;
+                  overflow-y: hidden !important;
               }
 
-              #tabs ul {
-                  flex-wrap: wrap !important;
+              body.kefir-tabs-top #tabs {
+                  position: static !important;
+                  float: none !important;
+                  clear: none !important;
+                  left: auto !important;
+                  right: auto !important;
+                  top: auto !important;
+                  bottom: auto !important;
+                  width: auto !important;
+                  min-width: 0 !important;
+                  max-width: none !important;
+                  height: auto !important;
+                  min-height: 0 !important;
+                  max-height: none !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  border: 0 !important;
+                  background: transparent !important;
+                  box-shadow: none !important;
+                  display: flex !important;
+                  align-items: center !important;
+                  flex: 1 1 auto !important;
+                  overflow: visible !important;
+              }
+
+              body.kefir-tabs-top #tabs ul {
+                  display: flex !important;
+                  flex-direction: row !important;
+                  flex-wrap: nowrap !important;
                   align-items: center !important;
                   gap: 4px !important;
                   width: auto !important;
-                  max-width: none !important;
                   height: auto !important;
                   margin: 0 !important;
                   padding: 0 !important;
                   list-style: none !important;
+                  overflow: visible !important;
               }
 
-              #tabs ul.mode-disconnected,
-              #tabs ul.mode-connected,
-              #tabs ul.mode-connected-cli {
-                  flex-direction: row !important;
-              }
-
-              #tabs li {
+              body.kefir-tabs-top #tabs li {
+                  display: flex !important;
                   float: none !important;
+                  clear: none !important;
                   width: auto !important;
                   height: auto !important;
-                  margin: 2px 3px !important;
+                  min-width: 0 !important;
+                  margin: 0 !important;
                   padding: 0 !important;
+                  flex: 0 0 auto !important;
               }
 
-              #tabs li a {
+              body.kefir-tabs-top #tabs li a {
                   display: flex !important;
                   flex-direction: column !important;
                   align-items: center !important;
                   justify-content: center !important;
-                  min-width: 58px !important;
-                  min-height: 42px !important;
-                  padding: 4px 6px !important;
+                  width: 74px !important;
+                  min-width: 74px !important;
+                  max-width: 74px !important;
+                  height: 50px !important;
+                  min-height: 50px !important;
+                  max-height: 50px !important;
+                  margin: 0 !important;
+                  padding: 4px 5px !important;
                   border-radius: 8px !important;
                   box-sizing: border-box !important;
-                  white-space: nowrap !important;
+                  text-align: center !important;
+                  white-space: normal !important;
+                  line-height: 1.05 !important;
+                  font-size: 12px !important;
+                  overflow: hidden !important;
               }
 
-              #tabs li.active a,
-              #tabs li a.active {
-                  background: rgba(255, 188, 0, 0.28) !important;
+              body.kefir-tabs-top #tabs li a:hover {
+                  background: rgba(255, 190, 0, 0.14) !important;
               }
 
-              #content {
+              body.kefir-tabs-top #tabs li.active a,
+              body.kefir-tabs-top #tabs li a.active {
+                  background: rgba(255, 190, 0, 0.32) !important;
+              }
+
+              body.kefir-tabs-top #tabs li a .icon,
+              body.kefir-tabs-top #tabs li a img,
+              body.kefir-tabs-top #tabs li a svg {
+                  max-width: 21px !important;
+                  max-height: 21px !important;
+                  margin: 0 0 3px 0 !important;
+              }
+
+              body.kefir-tabs-top #content,
+              body.kefir-tabs-top .content,
+              body.kefir-tabs-top #content_wrapper,
+              body.kefir-tabs-top #content-wrapper,
+              body.kefir-tabs-top .content_wrapper,
+              body.kefir-tabs-top .content-wrapper,
+              body.kefir-tabs-top .wrapper,
+              body.kefir-tabs-top #wrapper {
                   margin-left: 0 !important;
-                  padding-top: 10px !important;
+                  left: 0 !important;
+                  width: 100% !important;
+                  max-width: none !important;
+              }
+
+              body.kefir-tabs-top:not(.kefir-show-all-tabs) #tabs .tab_power,
+              body.kefir-tabs-top:not(.kefir-show-all-tabs) #tabs .tab_presets,
+              body.kefir-tabs-top:not(.kefir-show-all-tabs) #tabs .tab_adjustments,
+              body.kefir-tabs-top:not(.kefir-show-all-tabs) #tabs .tab_led_strip,
+              body.kefir-tabs-top:not(.kefir-show-all-tabs) #tabs .tab_logging,
+              body.kefir-tabs-top:not(.kefir-show-all-tabs) #tabs .tab_onboard_logging {
+                  display: none !important;
+              }
+
+              body.kefir-tabs-top.kefir-show-all-tabs #tabs .tab_power,
+              body.kefir-tabs-top.kefir-show-all-tabs #tabs .tab_presets,
+              body.kefir-tabs-top.kefir-show-all-tabs #tabs .tab_adjustments,
+              body.kefir-tabs-top.kefir-show-all-tabs #tabs .tab_led_strip,
+              body.kefir-tabs-top.kefir-show-all-tabs #tabs .tab_logging,
+              body.kefir-tabs-top.kefir-show-all-tabs #tabs .tab_onboard_logging {
+                  display: flex !important;
               }
 
               #kefir-tabs-toggle-panel {
                   display: flex !important;
                   align-items: center !important;
                   gap: 8px !important;
+                  flex: 0 0 auto !important;
                   margin-left: auto !important;
-                  padding: 4px 10px !important;
-                  border-left: 1px solid #cccccc !important;
+                  padding: 4px 0 4px 10px !important;
+                  border-left: 1px solid #cfcfcf !important;
                   color: #555555 !important;
                   font-size: 13px !important;
-                  line-height: 1.2 !important;
                   white-space: nowrap !important;
                   user-select: none !important;
+                  cursor: pointer !important;
               }
 
               .kefir-switch {
@@ -379,43 +431,73 @@ jobs:
               }
 
               @media (max-width: 1200px) {
-                  #tabs li a {
-                      min-width: 48px !important;
-                      min-height: 38px !important;
+                  body.kefir-tabs-top #tabs li a {
+                      width: 58px !important;
+                      min-width: 58px !important;
+                      max-width: 58px !important;
                       font-size: 11px !important;
                   }
 
-                  #kefir-tabs-toggle-panel {
-                      width: 100% !important;
-                      margin-left: 0 !important;
-                      border-left: 0 !important;
-                      border-top: 1px solid #cccccc !important;
-                      justify-content: flex-end !important;
+                  #kefir-tabs-toggle-panel span {
+                      display: none !important;
                   }
               }
           </style>
 
-          <script id="kefir-top-tabs-script">
+          <script id="kefir-top-tabs-script-v3">
               (function () {
                   const STORAGE_KEY = "kefirShowAllTabs";
 
-                  function applyKefirTabsMode() {
-                      const showAll = localStorage.getItem(STORAGE_KEY) === "1";
-                      document.body.classList.toggle("kefir-show-all-tabs", showAll);
+                  const HIDDEN_TABS = [
+                      "tab_power",
+                      "tab_presets",
+                      "tab_adjustments",
+                      "tab_led_strip",
+                      "tab_logging",
+                      "tab_onboard_logging"
+                  ];
 
-                      const checkbox = document.getElementById("kefir-show-all-tabs-checkbox");
-                      if (checkbox) {
-                          checkbox.checked = showAll;
-                      }
+                  let applyingVisibility = false;
+
+                  function getShowAll() {
+                      return localStorage.getItem(STORAGE_KEY) === "1";
                   }
 
-                  function createKefirTabsToggle() {
-                      const tabs = document.getElementById("tabs");
-                      if (!tabs || document.getElementById("kefir-tabs-toggle-panel")) {
-                          applyKefirTabsMode();
+                  function forceTabsVisibility() {
+                      if (applyingVisibility) {
                           return;
                       }
 
+                      applyingVisibility = true;
+
+                      try {
+                          const showAll = getShowAll();
+
+                          document.body.classList.add("kefir-tabs-top");
+                          document.body.classList.toggle("kefir-show-all-tabs", showAll);
+
+                          HIDDEN_TABS.forEach(function (cls) {
+                              document.querySelectorAll("#tabs ." + cls).forEach(function (el) {
+                                  if (showAll) {
+                                      el.style.setProperty("display", "flex", "important");
+                                      el.classList.remove("kefir-force-hidden-tab");
+                                  } else {
+                                      el.style.setProperty("display", "none", "important");
+                                      el.classList.add("kefir-force-hidden-tab");
+                                  }
+                              });
+                          });
+
+                          const checkbox = document.getElementById("kefir-show-all-tabs-checkbox");
+                          if (checkbox) {
+                              checkbox.checked = showAll;
+                          }
+                      } finally {
+                          applyingVisibility = false;
+                      }
+                  }
+
+                  function createTogglePanel() {
                       const panel = document.createElement("div");
                       panel.id = "kefir-tabs-toggle-panel";
 
@@ -424,7 +506,7 @@ jobs:
 
                       const label = document.createElement("label");
                       label.className = "kefir-switch";
-                      label.title = "Показать или скрыть вкладки: Питание, Пресеты, Регулировка, LED, Логи, Blackbox";
+                      label.title = "Показать/скрыть: Питание, Пресеты, Регулировка, LED, Логи, Blackbox";
 
                       const input = document.createElement("input");
                       input.type = "checkbox";
@@ -433,38 +515,119 @@ jobs:
                       const slider = document.createElement("span");
                       slider.className = "kefir-slider";
 
+                      function setToggleState(value) {
+                          localStorage.setItem(STORAGE_KEY, value ? "1" : "0");
+                          forceTabsVisibility();
+                      }
+
                       input.addEventListener("change", function () {
-                          localStorage.setItem(STORAGE_KEY, input.checked ? "1" : "0");
-                          applyKefirTabsMode();
+                          setToggleState(input.checked);
                       });
 
                       label.appendChild(input);
                       label.appendChild(slider);
+
                       panel.appendChild(text);
                       panel.appendChild(label);
 
-                      tabs.appendChild(panel);
+                      panel.addEventListener("click", function (event) {
+                          if (event.target === input) {
+                              return;
+                          }
 
-                      applyKefirTabsMode();
+                          event.preventDefault();
+                          input.checked = !input.checked;
+                          setToggleState(input.checked);
+                      });
+
+                      return panel;
+                  }
+
+                  function mountKefirTopTabs() {
+                      const tabs = document.getElementById("tabs");
+                      if (!tabs) {
+                          return;
+                      }
+
+                      let host = document.getElementById("kefir-top-tabs-host");
+                      if (!host) {
+                          host = document.createElement("div");
+                          host.id = "kefir-top-tabs-host";
+
+                          const toolbar =
+                              document.getElementById("toolbar") ||
+                              document.getElementById("header") ||
+                              document.querySelector("header") ||
+                              document.querySelector(".header") ||
+                              document.body.firstElementChild;
+
+                          if (toolbar && toolbar.parentNode) {
+                              toolbar.parentNode.insertBefore(host, toolbar.nextSibling);
+                          } else {
+                              document.body.insertBefore(host, document.body.firstChild);
+                          }
+                      }
+
+                      if (tabs.parentNode !== host) {
+                          host.insertBefore(tabs, host.firstChild);
+                      }
+
+                      if (!document.getElementById("kefir-tabs-toggle-panel")) {
+                          host.appendChild(createTogglePanel());
+                      }
+
+                      forceTabsVisibility();
+                  }
+
+                  function startObserver() {
+                      const tabs = document.getElementById("tabs");
+                      if (!tabs || window.kefirTabsObserverStarted) {
+                          return;
+                      }
+
+                      window.kefirTabsObserverStarted = true;
+
+                      const observer = new MutationObserver(function () {
+                          setTimeout(forceTabsVisibility, 0);
+                      });
+
+                      observer.observe(tabs, {
+                          childList: true,
+                          subtree: true,
+                          attributes: true,
+                          attributeFilter: ["style", "class"]
+                      });
+                  }
+
+                  function boot() {
+                      mountKefirTopTabs();
+                      startObserver();
+                      forceTabsVisibility();
                   }
 
                   if (document.readyState === "loading") {
-                      document.addEventListener("DOMContentLoaded", createKefirTabsToggle);
+                      document.addEventListener("DOMContentLoaded", boot);
                   } else {
-                      createKefirTabsToggle();
+                      boot();
                   }
 
-                  window.addEventListener("load", createKefirTabsToggle);
+                  window.addEventListener("load", boot);
+
+                  setTimeout(boot, 300);
+                  setTimeout(boot, 800);
+                  setTimeout(boot, 1500);
+                  setTimeout(boot, 2500);
               })();
           </script>
-          <!-- KEFIR TOP TABS UI PATCH END -->
+          <!-- KEFIR TOP TABS UI PATCH V3 END -->
           `;
 
           html = html.replace("</head>", patch + "\n</head>");
 
           fs.writeFileSync(file, html);
 
-          console.log("Kefir top tabs UI patch applied successfully.");
+          console.log("Kefir top tabs UI patch V3 applied successfully.");
+          console.log("Panel is physically moved to top host.");
           console.log("Hidden by default:");
           console.log("tab_power, tab_presets, tab_adjustments, tab_led_strip, tab_logging, tab_onboard_logging");
           NODE
