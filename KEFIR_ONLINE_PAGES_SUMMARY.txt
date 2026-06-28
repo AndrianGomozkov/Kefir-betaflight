@@ -1,0 +1,9 @@
+Andrian Betaflight VTX One-Based Online Pages Pack
+
+Upload this package to an empty GitHub repository.
+The included GitHub Actions workflow will:
+1. checkout official betaflight/betaflight-configurator;
+2. apply the visual-only VTX UI patch;
+3. test conversion logic;
+4. build the PWA;
+5. deploy it to GitHub Pages.
