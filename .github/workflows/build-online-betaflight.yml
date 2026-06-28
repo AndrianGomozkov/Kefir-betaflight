@@ -203,7 +203,7 @@ jobs:
           echo "Checking JavaScript syntax..."
           node --check app/src/js/tabs/vtx.js
 
-      - name: Build Betaflight App
+       - name: Build Betaflight App
         shell: bash
         run: |
           set -euo pipefail
@@ -216,7 +216,14 @@ jobs:
           echo "NPM version:"
           npm --version
 
-          npm ci --no-audit --no-fund
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            echo "Lock file found. Using npm ci..."
+            npm ci --no-audit --no-fund
+          else
+            echo "No package-lock.json found. Using npm install..."
+            npm install --no-audit --no-fund --legacy-peer-deps
+          fi
+
           npm run build
 
       - name: Locate build output
