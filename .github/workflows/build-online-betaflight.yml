@@ -135,7 +135,7 @@ function kefirPowerValueFromUi(value) {
           const displayOld = '$(`#vtx_table_powerlevels_${i}`).val(TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value);';
           const displayNew = '$(`#vtx_table_powerlevels_${i}`).val( kefirPowerValueToUi(TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value), );';
 
-          if (!src.includes(displayNew)) {
+          if (!src.includes(displayNew)) { 
             if (!src.includes(displayOld)) {
               throw new Error('Cannot find VTX power value UI display assignment in vtx.js.');
             }
