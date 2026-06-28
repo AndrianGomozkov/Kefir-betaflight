@@ -44,7 +44,6 @@ jobs:
           cd app
           git remote add origin "https://github.com/${REPO}.git"
 
-          # First try a release tag / branch. If the user entered a commit SHA, fetch fallback handles it.
           if git fetch --depth=1 origin "${REF}"; then
             git checkout FETCH_HEAD
           elif git fetch --depth=1 origin "refs/tags/${REF}:refs/tags/${REF}"; then
@@ -58,7 +57,7 @@ jobs:
           echo "Checked out commit:"
           git rev-parse --short HEAD
 
-          echo "package.json version line:"
+          echo "package.json version and node engine:"
           node -e "const p=require('./package.json'); console.log(p.version, p.engines && p.engines.node);"
 
       - name: Patch VTX tab for Kefir one-based visual power values
@@ -70,7 +69,7 @@ jobs:
           if [ ! -f "$VTX_FILE" ]; then
             echo "ERROR: expected old Betaflight 2025.12.2 VTX file was not found: $VTX_FILE"
             echo "VTX candidates in downloaded source:"
-            find app/src -iname '*vtx*' -maxdepth 6 -type f | sort || true
+            find app/src -maxdepth 6 -type f -iname '*vtx*' | sort || true
             exit 1
           fi
 
@@ -81,76 +80,88 @@ jobs:
 
           const helperMarker = 'const vtx = { vtxTableSavePending: false, vtxTableFactoryBandsSupported: false, MAX_POWERLEVEL_VALUES: 8, MAX_BAND_VALUES: 8, MAX_BAND_CHANNELS_VALUES: 8, VTXTABLE_BAND_LIST: [], VTXTABLE_POWERLEVEL_LIST: [], analyticsChanges: {}, updating: true, env: new djv(), };';
           const helpers = `${helperMarker}
-// KEFIR ONE-BASED VTX UI PATCH START
-// This patch is visual-only. Betaflight/MSP/JSON keep the original power values.
-// It only displays sequential zero-based VTX table power values like 0 1 2 3 as 1 2 3 4.
-// Normal milliwatt tables like 25 200 500 800 are not shifted.
-function kefirIsOneBasedVisualPowerValues(list = TABS.vtx.VTXTABLE_POWERLEVEL_LIST) {
-    if (!Array.isArray(list) || list.length === 0) {
-        return false;
-    }
+          // KEFIR ONE-BASED VTX UI PATCH START
+          // Visual-only patch: MSP, JSON and Betaflight internal values stay original.
+          // Sequential zero-based VTX power values like 0 1 2 3 are displayed as 1 2 3 4.
+          // Real milliwatt values like 25 200 500 800 are not shifted.
+          function kefirIsOneBasedVisualPowerValues(list = TABS.vtx.VTXTABLE_POWERLEVEL_LIST) {
+              if (!Array.isArray(list) || list.length === 0) {
+                  return false;
+              }
 
-    const values = list
-        .map((item) => parseInt(item && item.vtxtable_powerlevel_value))
-        .filter((value) => Number.isFinite(value));
+              const values = list
+                  .map((item) => parseInt(item && item.vtxtable_powerlevel_value))
+                  .filter((value) => Number.isFinite(value));
 
-    if (values.length === 0) {
-        return false;
-    }
+              if (values.length === 0) {
+                  return false;
+              }
 
-    const isSequentialZeroBased = values.every((value, index) => value === index);
-    const isSmallPowerIndexTable = values.every(
-        (value) => value >= 0 && value < TABS.vtx.MAX_POWERLEVEL_VALUES,
-    );
+              const isSequentialZeroBased = values.every((value, index) => value === index);
+              const isSmallIndexTable = values.every(
+                  (value) => value >= 0 && value < TABS.vtx.MAX_POWERLEVEL_VALUES,
+              );
 
-    return isSequentialZeroBased && isSmallPowerIndexTable;
-}
+              return isSequentialZeroBased && isSmallIndexTable;
+          }
 
-function kefirPowerValueToUi(value) {
-    const numericValue = parseInt(value);
-    if (!Number.isFinite(numericValue)) {
-        return value;
-    }
-    return kefirIsOneBasedVisualPowerValues() ? numericValue + 1 : numericValue;
-}
+          function kefirPowerValueToUi(value, shouldShift = kefirIsOneBasedVisualPowerValues()) {
+              const numericValue = parseInt(value);
+              if (!Number.isFinite(numericValue)) {
+                  return value;
+              }
+              return shouldShift ? numericValue + 1 : numericValue;
+          }
 
-function kefirPowerValueFromUi(value) {
-    const numericValue = parseInt(value);
-    if (!Number.isFinite(numericValue)) {
-        return 0;
-    }
-    return kefirIsOneBasedVisualPowerValues() ? Math.max(0, numericValue - 1) : numericValue;
-}
-// KEFIR ONE-BASED VTX UI PATCH END`;
+          function kefirPowerValueFromUi(value, shouldShift) {
+              const numericValue = parseInt(value);
+              if (!Number.isFinite(numericValue)) {
+                  return 0;
+              }
+              return shouldShift ? Math.max(0, numericValue - 1) : numericValue;
+          }
+          // KEFIR ONE-BASED VTX UI PATCH END`;
+
+          function replaceOnce(source, oldText, newText, description) {
+              if (source.includes(newText)) {
+                  console.log(`${description}: already patched`);
+                  return source;
+              }
+              if (!source.includes(oldText)) {
+                  throw new Error(`Cannot find marker for: ${description}`);
+              }
+              return source.replace(oldText, newText);
+          }
 
           if (src.includes('KEFIR ONE-BASED VTX UI PATCH START')) {
-            console.log('Kefir patch already present; skipping helper insertion.');
+              console.log('Kefir helper functions already present; skipping helper insertion.');
           } else {
-            if (!src.includes(helperMarker)) {
-              throw new Error('Cannot find helper insertion marker in vtx.js. Wrong Betaflight App version?');
-            }
-            src = src.replace(helperMarker, helpers);
+              if (!src.includes(helperMarker)) {
+                  throw new Error('Cannot find helper insertion marker in vtx.js. Wrong Betaflight App version?');
+              }
+              src = src.replace(helperMarker, helpers);
           }
 
-          const displayOld = '$(`#vtx_table_powerlevels_${i}`).val(TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value);';
-          const displayNew = '$(`#vtx_table_powerlevels_${i}`).val( kefirPowerValueToUi(TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value), );';
+          src = replaceOnce(
+              src,
+              '$(`#vtx_table_powerlevels_${i}`).val(TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value);',
+              '$(`#vtx_table_powerlevels_${i}`).val(kefirPowerValueToUi(TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value));',
+              'UI power value display conversion',
+          );
 
-          if (!src.includes(displayNew)) { 
-            if (!src.includes(displayOld)) {
-              throw new Error('Cannot find VTX power value UI display assignment in vtx.js.');
-            }
-            src = src.replace(displayOld, displayNew);
-          }
+          src = replaceOnce(
+              src,
+              'TABS.vtx.VTXTABLE_POWERLEVEL_LIST = []; for (let i = 1; i <= FC.VTX_CONFIG.vtx_table_powerlevels; i++) {',
+              'const kefirShouldShiftPowerValues = kefirIsOneBasedVisualPowerValues(); TABS.vtx.VTXTABLE_POWERLEVEL_LIST = []; for (let i = 1; i <= FC.VTX_CONFIG.vtx_table_powerlevels; i++) {',
+              'Save-time conversion flag before clearing power list',
+          );
 
-          const saveOld = 'TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value = parseInt( $(`#vtx_table_powerlevels_${i}`).val(), );';
-          const saveNew = 'TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value = kefirPowerValueFromUi( $(`#vtx_table_powerlevels_${i}`).val(), );';
-
-          if (!src.includes(saveNew)) {
-            if (!src.includes(saveOld)) {
-              throw new Error('Cannot find VTX power value save assignment in dump_html_to_msp().');
-            }
-            src = src.replace(saveOld, saveNew);
-          }
+          src = replaceOnce(
+              src,
+              'TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value = parseInt( $(`#vtx_table_powerlevels_${i}`).val(), );',
+              'TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value = kefirPowerValueFromUi( $(`#vtx_table_powerlevels_${i}`).val(), kefirShouldShiftPowerValues, );',
+              'Save-time UI power value conversion back to Betaflight value',
+          );
 
           fs.writeFileSync(path, src);
           console.log('Kefir VTX one-based visual patch applied to:', path);
@@ -164,6 +175,7 @@ function kefirPowerValueFromUi(value) {
           grep -q "KEFIR ONE-BASED VTX UI PATCH START" app/src/js/tabs/vtx.js
           grep -q "kefirPowerValueToUi" app/src/js/tabs/vtx.js
           grep -q "kefirPowerValueFromUi" app/src/js/tabs/vtx.js
+          grep -q "kefirShouldShiftPowerValues" app/src/js/tabs/vtx.js
 
           node <<'NODE'
           function isShifted(values) {
@@ -173,7 +185,8 @@ function kefirPowerValueFromUi(value) {
               return isShifted(values) ? values.map((value) => value + 1) : values;
           }
           function fromUi(uiValues, originalValues) {
-              return isShifted(originalValues) ? uiValues.map((value) => Math.max(0, value - 1)) : uiValues;
+              const shouldShift = isShifted(originalValues);
+              return shouldShift ? uiValues.map((value) => Math.max(0, value - 1)) : uiValues;
           }
 
           const rawSa20 = [0, 1, 2, 3];
@@ -229,7 +242,7 @@ function kefirPowerValueFromUi(value) {
             BUILD_DIR="app/src/dist"
           else
             echo "ERROR: cannot find build output directory. Dist candidates:"
-            find app -maxdepth 3 -type d -name dist | sort || true
+            find app -maxdepth 4 -type d -name dist | sort || true
             exit 1
           fi
           echo "Using build output: $BUILD_DIR"
