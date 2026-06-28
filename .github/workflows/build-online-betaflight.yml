@@ -2,16 +2,6 @@ name: Build online Kefir Betaflight VTX 2025.12.2
 
 on:
   workflow_dispatch:
-    inputs:
-      upstream_repository:
-        description: "Repository to build"
-        required: true
-        default: "betaflight/betaflight-configurator"
-      upstream_ref:
-        description: "Betaflight App version/tag/commit"
-        required: true
-        default: "2025.12.2"
-
   push:
     branches:
       - main
@@ -25,7 +15,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "kefir-betaflight-pages"
+  group: kefir-betaflight-pages
   cancel-in-progress: true
 
 jobs:
@@ -34,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      UPSTREAM_REPOSITORY: ${{ github.event.inputs.upstream_repository || 'betaflight/betaflight-configurator' }}
-      UPSTREAM_REF: ${{ github.event.inputs.upstream_ref || '2025.12.2' }}
+      UPSTREAM_REPOSITORY: betaflight/betaflight-configurator
+      UPSTREAM_REF: 2025.12.2
       HUSKY: "0"
 
     steps:
@@ -122,23 +112,7 @@ jobs:
               process.exit(1);
           }
 
-          /*
-           * KEFIR ONE-BASED VTX UI PATCH
-           *
-           * Goal:
-           * - Betaflight/MSP/JSON stay correct.
-           * - Only visual display changes for zero-based VTX Table power values.
-           *
-           * Example:
-           * - Betaflight raw values: 0 1 2 3
-           * - User sees:           1 2 3 4
-           * - Save / Save file:    0 1 2 3
-           *
-           * Normal mw tables are not shifted:
-           * - 25 200 500 800 stays 25 200 500 800
-           */
-
-          const displayRegex = /\$\(`#vtx_table_powerlevels_\$\{i\}`\)\.val\(\s*TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST\[i - 1\]\.vtxtable_powerlevel_value,?\s*\);/;
+          const displayRegex = /\$\\(`#vtx_table_powerlevels_\$\{i\}`\\)\.val\(\s*TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST\[i - 1\]\.vtxtable_powerlevel_value,?\s*\);/;
 
           if (!displayRegex.test(src)) {
               fail("Cannot find UI display assignment for VTX power values.");
@@ -177,7 +151,7 @@ jobs:
               return `${prefix}\n${savePrepareInsert}\nTABS.vtx.VTXTABLE_POWERLEVEL_LIST = [];`;
           });
 
-          const saveAssignmentRegex = /TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST\[i - 1\]\.vtxtable_powerlevel_value = parseInt\(\s*\$\(`#vtx_table_powerlevels_\$\{i\}`\)\.val\(\),\s*\);/;
+          const saveAssignmentRegex = /TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST\[i - 1\]\.vtxtable_powerlevel_value = parseInt\(\s*\$\\(`#vtx_table_powerlevels_\$\{i\}`\\)\.val\(\),\s*\);/;
 
           if (!saveAssignmentRegex.test(src)) {
               fail("Cannot find save assignment for VTX power values.");
@@ -203,7 +177,7 @@ jobs:
           echo "Checking JavaScript syntax..."
           node --check app/src/js/tabs/vtx.js
 
-       - name: Build Betaflight App
+      - name: Build Betaflight App
         shell: bash
         run: |
           set -euo pipefail
