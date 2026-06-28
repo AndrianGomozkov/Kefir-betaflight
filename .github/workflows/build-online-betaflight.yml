@@ -1,0 +1,95 @@
+name: Build online Andrian Betaflight VTX
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_repository:
+        description: "Original Betaflight App repository"
+        required: true
+        default: "betaflight/betaflight-configurator"
+      upstream_ref:
+        description: "Branch or tag to build"
+        required: true
+        default: "master"
+  push:
+    branches: ["main", "master"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  DEFAULT_UPSTREAM_REPOSITORY: betaflight/betaflight-configurator
+  DEFAULT_UPSTREAM_REF: master
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Andrian patch pack
+        uses: actions/checkout@v4
+        with:
+          path: patch
+
+      - name: Checkout Betaflight App source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.upstream_repository || env.DEFAULT_UPSTREAM_REPOSITORY }}
+          ref: ${{ github.event.inputs.upstream_ref || env.DEFAULT_UPSTREAM_REF }}
+          path: app
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Apply Andrian VTX visual-only patch
+        run: |
+          mkdir -p app/tools
+          cp patch/tools/apply_andrian_vtx_ui_patch.mjs app/tools/apply_andrian_vtx_ui_patch.mjs
+          cd app
+          node tools/apply_andrian_vtx_ui_patch.mjs
+
+      - name: Run conversion safety test
+        run: node patch/tools/test_vtx_visual_conversion.mjs
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci || npm install
+
+      - name: Build PWA for GitHub Pages
+        working-directory: app
+        run: npm run build -- --base=./
+
+      - name: Add Pages marker files
+        run: |
+          touch app/src/dist/.nojekyll
+          cat > app/src/dist/ANDRIAN_VTX_BUILD_INFO.txt <<EOF
+          Andrian Betaflight VTX One-Based UI build
+          Visual-only patch: VTX table zero-based control power values are shown as 1-based in UI.
+          Saved Betaflight/MSP/JSON values remain original/compatible.
+          Source: ${{ github.event.inputs.upstream_repository || env.DEFAULT_UPSTREAM_REPOSITORY }} @ ${{ github.event.inputs.upstream_ref || env.DEFAULT_UPSTREAM_REF }}
+          EOF
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/src/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
