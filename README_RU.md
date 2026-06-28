@@ -1,4 +1,4 @@
-# Andrian Betaflight VTX One-Based Online Pages Pack
+# Kefir Betaflight VTX One-Based Online Pages Pack
 
 Этот пакет предназначен для пустого GitHub-репозитория.
 Он сам скачивает официальный `betaflight/betaflight-configurator`, применяет визуальную правку VTX и публикует онлайн-версию через GitHub Pages.
@@ -17,7 +17,7 @@
 ## Что лежит в пакете
 
 - `.github/workflows/build-online-betaflight.yml` — автоматическая сборка и публикация сайта.
-- `tools/apply_andrian_vtx_ui_patch.mjs` — применяет правку к `src/js/tabs/vtx.js`.
+- `tools/apply_kefir_vtx_ui_patch.mjs` — применяет правку к `src/js/tabs/vtx.js`.
 - `tools/test_vtx_visual_conversion.mjs` — проверяет, что конвертация визуальная и обратимая.
 - `docs/WHAT_WAS_CHECKED.md` — краткая проверка логики.
 
@@ -31,7 +31,7 @@
 6. Открой вкладку `Settings` → `Pages`.
 7. В `Build and deployment` выбери `Source: GitHub Actions`.
 8. Открой вкладку `Actions`.
-9. Выбери workflow `Build online Andrian Betaflight VTX`.
+9. Выбери workflow `Build online Kefir Betaflight VTX`.
 10. Нажми `Run workflow`.
 11. После зелёной галочки зайди в `Settings` → `Pages`; там будет ссылка вида:
     `https://ТВОЙ_НИК.github.io/ИМЯ_РЕПОЗИТОРИЯ/`

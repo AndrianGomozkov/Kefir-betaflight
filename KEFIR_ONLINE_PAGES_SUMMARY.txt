@@ -1,4 +1,4 @@
-Andrian Betaflight VTX One-Based Online Pages Pack
+Kefir Betaflight VTX One-Based Online Pages Pack
 
 Upload this package to an empty GitHub repository.
 The included GitHub Actions workflow will:
