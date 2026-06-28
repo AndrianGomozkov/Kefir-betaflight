@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          rm -rf app
+          rm -rf app site
 
           echo "Repository: $UPSTREAM_REPOSITORY"
           echo "Ref: $UPSTREAM_REF"
@@ -96,7 +96,6 @@ jobs:
               console.error("");
               console.error("PATCH ERROR:", message);
               console.error("");
-              console.error("Debug info:");
               console.error("File length:", src.length);
               console.error("Contains vtx_table_powerlevels_${i}:", src.includes("vtx_table_powerlevels_${i}"));
               console.error("Contains vtxtable_powerlevel_value:", src.includes("vtxtable_powerlevel_value"));
@@ -106,20 +105,20 @@ jobs:
               const p = src.indexOf("vtx_table_powerlevels_${i}");
               if (p >= 0) {
                   console.error("Snippet around vtx_table_powerlevels_${i}:");
-                  console.error(src.slice(Math.max(0, p - 800), Math.min(src.length, p + 1200)));
+                  console.error(src.slice(Math.max(0, p - 1500), Math.min(src.length, p + 2200)));
               }
 
               process.exit(1);
           }
 
-          const displayRegex = /\$\\(`#vtx_table_powerlevels_\$\{i\}`\\)\.val\(\s*TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST\[i - 1\]\.vtxtable_powerlevel_value,?\s*\);/;
+          const displayOld = '$(`#vtx_table_powerlevels_${i}`).val(TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value);';
 
-          if (!displayRegex.test(src)) {
-              fail("Cannot find UI display assignment for VTX power values.");
+          if (!src.includes(displayOld)) {
+              fail("Cannot find exact UI display assignment for VTX power values.");
           }
 
-          const displayReplacement = [
-              "// KEFIR ONE-BASED VTX UI PATCH START - visual display",
+          const displayNew = [
+              "// KEFIR ONE-BASED VTX UI PATCH START - visual display only",
               "const kefirPowerValuesAreZeroBased = TABS.vtx.VTXTABLE_POWERLEVEL_LIST",
               "    .slice(0, FC.VTX_CONFIG.vtx_table_powerlevels)",
               "    .every((item, index) => Number(item.vtxtable_powerlevel_value) === index);",
@@ -127,18 +126,18 @@ jobs:
               "$(`#vtx_table_powerlevels_${i}`).val(",
               "    kefirPowerValuesAreZeroBased ? kefirRawPowerValue + 1 : kefirRawPowerValue,",
               ");",
-              "// KEFIR ONE-BASED VTX UI PATCH END - visual display"
+              "// KEFIR ONE-BASED VTX UI PATCH END - visual display only"
           ].join("\n");
 
-          src = src.replace(displayRegex, displayReplacement);
+          src = src.replace(displayOld, displayNew);
 
-          const savePrepareRegex = /(\/\/ Power levels\s*FC\.VTX_CONFIG\.vtx_table_powerlevels = parseInt\(\$\("#vtx_table_powerlevels"\)\.val\(\)\);\s*)TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST = \[\];/;
+          const saveResetRegex = /(\/\/ Power levels\s*FC\.VTX_CONFIG\.vtx_table_powerlevels = parseInt\(\$\("#vtx_table_powerlevels"\)\.val\(\)\);\s*)TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST = \[\];/;
 
-          if (!savePrepareRegex.test(src)) {
-              fail("Cannot find save preparation area before VTX power list reset.");
+          if (!saveResetRegex.test(src)) {
+              fail("Cannot find power-level save reset area.");
           }
 
-          const savePrepareInsert = [
+          const saveDetectInsert = [
               "// KEFIR ONE-BASED VTX UI PATCH START - detect visual one-based values before clearing list",
               "const kefirOneBasedVisualPowerValues = Array.from(",
               "    { length: FC.VTX_CONFIG.vtx_table_powerlevels },",
@@ -147,17 +146,17 @@ jobs:
               "// KEFIR ONE-BASED VTX UI PATCH END - detect visual one-based values before clearing list"
           ].join("\n");
 
-          src = src.replace(savePrepareRegex, (match, prefix) => {
-              return `${prefix}\n${savePrepareInsert}\nTABS.vtx.VTXTABLE_POWERLEVEL_LIST = [];`;
+          src = src.replace(saveResetRegex, function (match, prefix) {
+              return prefix + "\n" + saveDetectInsert + "\nTABS.vtx.VTXTABLE_POWERLEVEL_LIST = [];";
           });
 
-          const saveAssignmentRegex = /TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST\[i - 1\]\.vtxtable_powerlevel_value = parseInt\(\s*\$\\(`#vtx_table_powerlevels_\$\{i\}`\\)\.val\(\),\s*\);/;
+          const saveAssignmentRegex = /TABS\.vtx\.VTXTABLE_POWERLEVEL_LIST\[i - 1\]\.vtxtable_powerlevel_value\s*=\s*parseInt\(\s*\$\(`#vtx_table_powerlevels_\$\{i\}`\)\.val\(\),?\s*\);/;
 
           if (!saveAssignmentRegex.test(src)) {
               fail("Cannot find save assignment for VTX power values.");
           }
 
-          const saveAssignmentReplacement = [
+          const saveAssignmentNew = [
               "// KEFIR ONE-BASED VTX UI PATCH START - convert visual value back to Betaflight raw value",
               "const kefirUiPowerValue = parseInt($(`#vtx_table_powerlevels_${i}`).val());",
               "TABS.vtx.VTXTABLE_POWERLEVEL_LIST[i - 1].vtxtable_powerlevel_value =",
@@ -165,7 +164,7 @@ jobs:
               "// KEFIR ONE-BASED VTX UI PATCH END - convert visual value back to Betaflight raw value"
           ].join("\n");
 
-          src = src.replace(saveAssignmentRegex, saveAssignmentReplacement);
+          src = src.replace(saveAssignmentRegex, saveAssignmentNew);
 
           fs.writeFileSync(file, src);
 
@@ -200,25 +199,28 @@ jobs:
 
           npm run build
 
-      - name: Locate build output
-        id: dist
+      - name: Prepare GitHub Pages folder
         shell: bash
         run: |
           set -euo pipefail
 
+          rm -rf site
+
           if [ -f app/src/dist/index.html ]; then
-            DIST_DIR="app/src/dist"
+            echo "Using app/src/dist"
+            cp -R app/src/dist site
           elif [ -f app/dist/index.html ]; then
-            DIST_DIR="app/dist"
+            echo "Using app/dist"
+            cp -R app/dist site
           else
             echo "ERROR: Cannot find build output index.html"
             echo "Candidates:"
-            find app -maxdepth 4 -name index.html -type f | sort
+            find app -maxdepth 5 -name index.html -type f | sort
             exit 1
           fi
 
-          echo "Build output: $DIST_DIR"
-          echo "dist_dir=$DIST_DIR" >> "$GITHUB_OUTPUT"
+          echo "Prepared site folder:"
+          ls -la site
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -226,8 +228,7 @@ jobs:
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ steps.dist.outputs.dist_dir }}
+          path: site
 
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
