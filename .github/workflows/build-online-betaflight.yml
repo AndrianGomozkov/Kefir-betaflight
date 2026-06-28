@@ -60,7 +60,7 @@ jobs:
           git rev-parse --short HEAD
           cd ..
 
-          echo "Checking VTX file:"
+          echo "Checking required files:"
           if [ ! -f app/src/js/tabs/vtx.js ]; then
             echo "ERROR: app/src/js/tabs/vtx.js not found."
             echo "Found VTX candidates:"
@@ -68,7 +68,12 @@ jobs:
             exit 1
           fi
 
-          echo "OK: app/src/js/tabs/vtx.js exists"
+          if [ ! -f app/src/index.html ]; then
+            echo "ERROR: app/src/index.html not found."
+            exit 1
+          fi
+
+          echo "OK: required files exist"
 
       - name: Patch VTX table visual power values
         shell: bash
@@ -88,7 +93,7 @@ jobs:
           let src = fs.readFileSync(file, "utf8");
 
           if (src.includes("KEFIR ONE-BASED VTX UI PATCH")) {
-              console.log("Kefir patch is already present. Skipping.");
+              console.log("Kefir VTX patch is already present. Skipping.");
               process.exit(0);
           }
 
@@ -175,6 +180,294 @@ jobs:
 
           echo "Checking JavaScript syntax..."
           node --check app/src/js/tabs/vtx.js
+
+      - name: Patch top tabs and hidden Kefir tabs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require("fs");
+
+          const file = "app/src/index.html";
+
+          if (!fs.existsSync(file)) {
+              console.error("Cannot find:", file);
+              process.exit(1);
+          }
+
+          let html = fs.readFileSync(file, "utf8");
+
+          if (html.includes("KEFIR TOP TABS UI PATCH")) {
+              console.log("Kefir top tabs patch is already present. Skipping.");
+              process.exit(0);
+          }
+
+          const requiredClasses = [
+              "tab_power",
+              "tab_presets",
+              "tab_adjustments",
+              "tab_led_strip",
+              "tab_logging",
+              "tab_onboard_logging"
+          ];
+
+          for (const cls of requiredClasses) {
+              if (!html.includes(cls)) {
+                  console.error("Cannot find required tab class in index.html:", cls);
+                  process.exit(1);
+              }
+          }
+
+          if (!html.includes("</head>")) {
+              console.error("Cannot find </head> in index.html");
+              process.exit(1);
+          }
+
+          const patch = `
+          <!-- KEFIR TOP TABS UI PATCH START -->
+          <style id="kefir-top-tabs-style">
+              body:not(.kefir-show-all-tabs) #tabs .tab_power,
+              body:not(.kefir-show-all-tabs) #tabs .tab_presets,
+              body:not(.kefir-show-all-tabs) #tabs .tab_adjustments,
+              body:not(.kefir-show-all-tabs) #tabs .tab_led_strip,
+              body:not(.kefir-show-all-tabs) #tabs .tab_logging,
+              body:not(.kefir-show-all-tabs) #tabs .tab_onboard_logging {
+                  display: none !important;
+              }
+
+              body.kefir-show-all-tabs #tabs .tab_power,
+              body.kefir-show-all-tabs #tabs .tab_presets,
+              body.kefir-show-all-tabs #tabs .tab_adjustments,
+              body.kefir-show-all-tabs #tabs .tab_led_strip,
+              body.kefir-show-all-tabs #tabs .tab_logging,
+              body.kefir-show-all-tabs #tabs .tab_onboard_logging {
+                  display: inline-flex !important;
+              }
+
+              #tabs {
+                  position: sticky !important;
+                  top: 0 !important;
+                  left: auto !important;
+                  right: auto !important;
+                  bottom: auto !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  max-height: none !important;
+                  overflow: visible !important;
+                  z-index: 900 !important;
+                  box-sizing: border-box !important;
+                  display: flex !important;
+                  flex-wrap: wrap !important;
+                  align-items: center !important;
+                  gap: 4px !important;
+                  padding: 6px 10px !important;
+                  margin: 0 !important;
+                  background: rgba(245, 245, 245, 0.98) !important;
+                  border-bottom: 1px solid #d0d0d0 !important;
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+              }
+
+              #tabs ul {
+                  flex-wrap: wrap !important;
+                  align-items: center !important;
+                  gap: 4px !important;
+                  width: auto !important;
+                  max-width: none !important;
+                  height: auto !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  list-style: none !important;
+              }
+
+              #tabs ul.mode-disconnected,
+              #tabs ul.mode-connected,
+              #tabs ul.mode-connected-cli {
+                  flex-direction: row !important;
+              }
+
+              #tabs li {
+                  float: none !important;
+                  width: auto !important;
+                  height: auto !important;
+                  margin: 2px 3px !important;
+                  padding: 0 !important;
+              }
+
+              #tabs li a {
+                  display: flex !important;
+                  flex-direction: column !important;
+                  align-items: center !important;
+                  justify-content: center !important;
+                  min-width: 58px !important;
+                  min-height: 42px !important;
+                  padding: 4px 6px !important;
+                  border-radius: 8px !important;
+                  box-sizing: border-box !important;
+                  white-space: nowrap !important;
+              }
+
+              #tabs li.active a,
+              #tabs li a.active {
+                  background: rgba(255, 188, 0, 0.28) !important;
+              }
+
+              #content {
+                  margin-left: 0 !important;
+                  padding-top: 10px !important;
+              }
+
+              #kefir-tabs-toggle-panel {
+                  display: flex !important;
+                  align-items: center !important;
+                  gap: 8px !important;
+                  margin-left: auto !important;
+                  padding: 4px 10px !important;
+                  border-left: 1px solid #cccccc !important;
+                  color: #555555 !important;
+                  font-size: 13px !important;
+                  line-height: 1.2 !important;
+                  white-space: nowrap !important;
+                  user-select: none !important;
+              }
+
+              .kefir-switch {
+                  position: relative !important;
+                  display: inline-block !important;
+                  width: 42px !important;
+                  height: 22px !important;
+                  flex: 0 0 auto !important;
+              }
+
+              .kefir-switch input {
+                  opacity: 0 !important;
+                  width: 0 !important;
+                  height: 0 !important;
+              }
+
+              .kefir-slider {
+                  position: absolute !important;
+                  cursor: pointer !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  right: 0 !important;
+                  bottom: 0 !important;
+                  background-color: #c8c8c8 !important;
+                  transition: 0.2s !important;
+                  border-radius: 999px !important;
+              }
+
+              .kefir-slider:before {
+                  position: absolute !important;
+                  content: "" !important;
+                  height: 18px !important;
+                  width: 18px !important;
+                  left: 2px !important;
+                  bottom: 2px !important;
+                  background-color: white !important;
+                  transition: 0.2s !important;
+                  border-radius: 50% !important;
+                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+              }
+
+              .kefir-switch input:checked + .kefir-slider {
+                  background-color: #f5b400 !important;
+              }
+
+              .kefir-switch input:checked + .kefir-slider:before {
+                  transform: translateX(20px) !important;
+              }
+
+              @media (max-width: 1200px) {
+                  #tabs li a {
+                      min-width: 48px !important;
+                      min-height: 38px !important;
+                      font-size: 11px !important;
+                  }
+
+                  #kefir-tabs-toggle-panel {
+                      width: 100% !important;
+                      margin-left: 0 !important;
+                      border-left: 0 !important;
+                      border-top: 1px solid #cccccc !important;
+                      justify-content: flex-end !important;
+                  }
+              }
+          </style>
+
+          <script id="kefir-top-tabs-script">
+              (function () {
+                  const STORAGE_KEY = "kefirShowAllTabs";
+
+                  function applyKefirTabsMode() {
+                      const showAll = localStorage.getItem(STORAGE_KEY) === "1";
+                      document.body.classList.toggle("kefir-show-all-tabs", showAll);
+
+                      const checkbox = document.getElementById("kefir-show-all-tabs-checkbox");
+                      if (checkbox) {
+                          checkbox.checked = showAll;
+                      }
+                  }
+
+                  function createKefirTabsToggle() {
+                      const tabs = document.getElementById("tabs");
+                      if (!tabs || document.getElementById("kefir-tabs-toggle-panel")) {
+                          applyKefirTabsMode();
+                          return;
+                      }
+
+                      const panel = document.createElement("div");
+                      panel.id = "kefir-tabs-toggle-panel";
+
+                      const text = document.createElement("span");
+                      text.textContent = "Показать скрытые вкладки";
+
+                      const label = document.createElement("label");
+                      label.className = "kefir-switch";
+                      label.title = "Показать или скрыть вкладки: Питание, Пресеты, Регулировка, LED, Логи, Blackbox";
+
+                      const input = document.createElement("input");
+                      input.type = "checkbox";
+                      input.id = "kefir-show-all-tabs-checkbox";
+
+                      const slider = document.createElement("span");
+                      slider.className = "kefir-slider";
+
+                      input.addEventListener("change", function () {
+                          localStorage.setItem(STORAGE_KEY, input.checked ? "1" : "0");
+                          applyKefirTabsMode();
+                      });
+
+                      label.appendChild(input);
+                      label.appendChild(slider);
+                      panel.appendChild(text);
+                      panel.appendChild(label);
+
+                      tabs.appendChild(panel);
+
+                      applyKefirTabsMode();
+                  }
+
+                  if (document.readyState === "loading") {
+                      document.addEventListener("DOMContentLoaded", createKefirTabsToggle);
+                  } else {
+                      createKefirTabsToggle();
+                  }
+
+                  window.addEventListener("load", createKefirTabsToggle);
+              })();
+          </script>
+          <!-- KEFIR TOP TABS UI PATCH END -->
+          `;
+
+          html = html.replace("</head>", patch + "\n</head>");
+
+          fs.writeFileSync(file, html);
+
+          console.log("Kefir top tabs UI patch applied successfully.");
+          console.log("Hidden by default:");
+          console.log("tab_power, tab_presets, tab_adjustments, tab_led_strip, tab_logging, tab_onboard_logging");
+          NODE
 
       - name: Build Betaflight App
         shell: bash
