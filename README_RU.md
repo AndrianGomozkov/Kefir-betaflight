@@ -1,72 +1,58 @@
-# Kefir Betaflight VTX One-Based Online Pack
+# Kefir Betaflight VTX One-Based Online Pack для Betaflight App 2025.12.2
 
-Это маленький проект для GitHub Pages. Он сам скачивает официальный `betaflight/betaflight-configurator`, применяет визуальную правку вкладки VTX и публикует онлайн-версию.
+Этот пакет собирает онлайн-версию Betaflight App **2025.12.2 (a2d0f50)** с одной правкой вкладки VTX/«Видеопередатчик».
 
-## Что исправлено в этой версии пакета
+## Что меняется
 
-Если раньше в Actions была ошибка:
-
-```text
-Cannot find .../app/src/js/tabs/vtx.js
-Run this script from the root of betaflight-configurator.
-```
-
-то этот пакет исправляет запуск: Betaflight скачивается в папку `app`, а патч запускается уже изнутри `app`. Также добавлена проверка/вывод найденных VTX-файлов перед патчем.
-
-## Что меняет патч
-
-Только визуальное отображение VTX Table Power Values:
+Только визуальное отображение `VTX Table -> Power Values`:
 
 ```text
-Внутри Betaflight: 0 1 2 3
-В интерфейсе:      1 2 3 4
-При Save:          0 1 2 3
-При Save File:     0 1 2 3
-При Save Lua:      0 1 2 3
+Betaflight внутри: 0 1 2 3
+Пользователь видит: 1 2 3 4
+Сохранить: обратно 0 1 2 3
+Сохранить файл: обратно 0 1 2 3
 ```
 
-Обычные значения мощности не трогаются:
+Обычные таблицы мощности не меняются:
 
 ```text
 25 200 500 800 -> 25 200 500 800
 ```
 
-## Как использовать через сайт GitHub
+## Как загрузить через сайт GitHub
 
-1. Открой свой репозиторий, например `Kefir-betaflight`.
-2. Удали старые файлы пакета или загрузи новые поверх старых.
-3. Нажми `Add file` → `Upload files`.
-4. Перетащи содержимое этой папки в репозиторий:
-
-```text
-.github
-README_RU.md
-docs
-tools
-KEFIR_ONLINE_PAGES_SUMMARY.txt
-```
-
-5. Нажми `Commit changes`.
-6. Открой `Settings` → `Pages`.
-7. В `Build and deployment` выбери `Source: GitHub Actions`.
-8. Открой `Actions`.
-9. Выбери `Build online Kefir Betaflight VTX`.
-10. Нажми `Run workflow`.
-11. Поля оставь по умолчанию:
+1. Открой свой репозиторий `Kefir-betaflight`.
+2. Удали старые workflow-файлы в `.github/workflows/`, если они остались.
+3. Загрузи содержимое этого архива через `Add file -> Upload files`.
+4. Зайди `Settings -> Pages`.
+5. В `Build and deployment` выбери `Source: GitHub Actions`.
+6. Зайди `Actions`.
+7. Запусти `Build online Kefir Betaflight VTX 2025.12.2`.
+8. Поля оставь как есть:
 
 ```text
 upstream_repository = betaflight/betaflight-configurator
-upstream_ref = master
+upstream_ref = 2025.12.2
 ```
 
-12. После зелёной сборки ссылка будет в `Settings` → `Pages`.
+После зелёной сборки ссылка появится в `Settings -> Pages`.
 
-Обычно ссылка будет такого вида:
+## Почему теперь должно собраться
+
+Предыдущая ошибка была из-за того, что `master` Betaflight уже новый и там нет старого файла:
 
 ```text
-https://ТВОЙ_НИК.github.io/Kefir-betaflight/
+app/src/js/tabs/vtx.js
 ```
 
-## Если сборка снова упадёт
+В версии `2025.12.2` этот файл есть. Этот workflow по умолчанию берёт именно релиз `2025.12.2`, а не `master`.
 
-Открой красный лог и посмотри шаг `Download Betaflight App source`. Там теперь печатается список найденных файлов `*vtx*.js`, чтобы было видно, скачался ли настоящий Betaflight и где лежит вкладка VTX.
+## Если снова красная ошибка
+
+Открой лог и проверь строку:
+
+```text
+Ref: 2025.12.2
+```
+
+Если там `master`, значит запускается старый workflow или в поле `upstream_ref` случайно введён `master`.
